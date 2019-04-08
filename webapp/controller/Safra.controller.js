@@ -1,7 +1,8 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
-	"sap/m/MessageBox"
-], function(Controller, MessageBox) {
+	"sap/m/MessageBox",
+	"br/com/idxtecSafra/service/Session"
+], function(Controller, MessageBox, Session) {
 	"use strict";
 
 	return Controller.extend("br.com.idxtecSafra.controller.Safra", {
@@ -36,7 +37,11 @@ sap.ui.define([
 				properties:{
 					"Id": 0,
 					"Descricao": "",
-					"Inativa": false
+					"Inativa": false,
+					"Empresa" : Session.get("EMPRESA_ID"),
+					"Usuario": Session.get("USUARIO_ID"),
+					"EmpresaDetails": { __metadata: { uri: "/Empresas(" + Session.get("EMPRESA_ID") + ")"}},
+					"UsuarioDetails": { __metadata: { uri: "/Usuarios(" + Session.get("USUARIO_ID") + ")"}}
 				}
 			});
 			
