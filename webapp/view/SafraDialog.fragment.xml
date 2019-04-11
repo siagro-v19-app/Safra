@@ -4,16 +4,15 @@
    <Dialog
 		id="SafraDialog"
 		title="{view>/titulo}"
-		class="sapUiSmallMargin">
+		class="sapUiSmallMargin sapUiSizeCompact">
    	
    		<VBox id="vBoxSafra" class="sapUiSmallMargin">
 			<Label text="Descrição:" labelFor="descricao"/>
-			<Input value="{Descricao}" id="descricao" required="true"/>
+			<Input value="{model>/Descricao}" id="descricao" required="true"/>
 			
 			<Label text="Inativa:" labelFor="inativa"/>
-			<Checkbox selected="{Inativa}" id="inativa"/>
+			<Checkbox selected="{model>/Inativa}" id="inativa"/>
 		</VBox>
-		
    		
    		<buttons>
    			<Button text="Salvar" press="onSaveDialog"/>

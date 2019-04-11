@@ -1,51 +1,53 @@
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/m/MessageBox",
-	"br/com/idxtecSafra/service/Session"
-], function(Controller, MessageBox, Session) {
+	"sap/ui/model/json/JSONModel",
+	"br/com/idxtecSafra/services/Session"
+], function(Controller, MessageBox, JSONModel, Session) {
 	"use strict";
 
 	return Controller.extend("br.com.idxtecSafra.controller.Safra", {
 		onInit: function(){
+			var oJSONModel = new JSONModel();
+			
+			this._operacao = null;
+			this._sPath = null;
+
+			this.getOwnerComponent().setModel(oJSONModel, "model");
 			this.getView().addStyleClass(this.getOwnerComponent().getContentDensityClass());
 		},
 		
 		onRefresh: function(){
 			var oModel = this.getOwnerComponent().getModel();
-			
 			oModel.refresh(true);
+			this.getView().byId("tableSafra").clearSelection();
 		},
 		
 		onIncluir: function(){
 			var oDialog = this._criarDialog();
-			var oModel = this.getOwnerComponent().getModel();
-			var oViewModel = this.getOwnerComponent().getModel("view");
+			var oTable = this.byId("tableSafra");
+			var oJSONModel = this.getOwnerComponent().getModel("model");
+			var oViewModel = this.getModel("view");
 			
 			oViewModel.setData({
-				titulo: "Inserir Safra",
-				msgSave: "Safra inserida com sucesso!"
+				titulo: "Inserir Safra"
 			});
 			
-			oDialog.unbindElement();
-			oDialog.setEscapeHandler(function(oPromise){
-				if(oModel.hasPendingChanges()){
-					oModel.resetChanges();
-				}
-			});
+			this._operacao = "incluir";
 			
-			var oContext = oModel.createEntry("/Safras", {
-				properties:{
-					"Id": 0,
-					"Descricao": "",
-					"Inativa": false,
-					"Empresa" : Session.get("EMPRESA_ID"),
-					"Usuario": Session.get("USUARIO_ID"),
-					"EmpresaDetails": { __metadata: { uri: "/Empresas(" + Session.get("EMPRESA_ID") + ")"}},
-					"UsuarioDetails": { __metadata: { uri: "/Usuarios(" + Session.get("USUARIO_ID") + ")"}}
-				}
-			});
+			var oNovoSafra = {
+				"Id": 0,
+				"Descricao": "",
+				"Inativa": false,
+				"Empresa" : Session.get("EMPRESA_ID"),
+				"Usuario": Session.get("USUARIO_ID"),
+				"EmpresaDetails": { __metadata: { uri: "/Empresas(" + Session.get("EMPRESA_ID") + ")"}},
+				"UsuarioDetails": { __metadata: { uri: "/Usuarios(" + Session.get("USUARIO_ID") + ")"}}
+			};
 			
-			oDialog.setBindingContext(oContext);
+			oJSONModel.setData(oNovoSafra);
+			
+			oTable.clearSelection();
 			oDialog.open();
 		},
 		
@@ -53,12 +55,15 @@ sap.ui.define([
 			var oDialog = this._criarDialog();
 			var oTable = this.byId("tableSafra");
 			var nIndex = oTable.getSelectedIndex();
-			var oViewModel = this.getOwnerComponent().getModel("view");
+			var oModel = this.getOwnerComponent().getModel();
+			var oJSONModel = this.getOwnerComponent().getModel("model");
+			var oViewModel = this.getModel("view");
 			
 			oViewModel.setData({
-				titulo: "Editar Safra",
-				msgSave: "Safra alterada com sucesso!"
+				titulo: "Editar Safra"
 			});
+			
+			this._operacao = "editar";
 			
 			if(nIndex === -1){
 				MessageBox.information("Selecione uma safra da tabela!");
@@ -66,8 +71,15 @@ sap.ui.define([
 			}
 			
 			var oContext = oTable.getContextByIndex(nIndex);
+			this._sPath = oContext.sPath;
 			
-			oDialog.bindElement(oContext.sPath);
+			oModel.read(oContext.sPath, {
+				success: function(oData){
+					oJSONModel.setData(oData);
+				}
+			});
+			
+			oTable.clearSelection();
 			oDialog.open();
 		},
 		
@@ -77,7 +89,7 @@ sap.ui.define([
 			var nIndex = oTable.getSelectedIndex();
 			
 			if(nIndex === -1){
-				MessageBox.information("Selecione uma safra da tabela!");
+				MessageBox.warning("Selecione uma safra da tabela!");
 				return;
 			}
 			
@@ -99,9 +111,6 @@ sap.ui.define([
 				success: function(){
 					oModel.refresh(true);
 					oTable.clearSelection();
-				},
-				error: function(oError){
-					MessageBox.error(oError.responseText);
 				}
 			});
 		},
@@ -119,26 +128,17 @@ sap.ui.define([
 		},
 		
 		onSaveDialog: function(){
-			var oView = this.getView();
-			var oModel = this.getOwnerComponent().getModel();
-			var oViewModel = this.getOwnerComponent().getModel("view");
-			
-			if(this._checarCampos(this.getView()) === true){
-				MessageBox.information("Preencha todos os campos obrigatórios!");
-				return; 
-			}else{
-				oModel.submitChanges({
-					success: function(){
-						oModel.refresh(true);
-						MessageBox.success(oViewModel.getData().msgSave);
-						oView.byId("SafraDialog").close();
-						oView.byId("tableSafra").clearSelection();
-					},
-					error: function(oError){
-						MessageBox.error(oError.responseText);
-					}
-				});
+			if (this._checarCampos(this.getView())) {
+				MessageBox.warning("Preencha todos os campos obrigatórios!");
+				return;
 			}
+			if(this._operacao === "incluir"){
+				this._createSafra();
+				this.getView().byId("SafraDialog").close();
+			} else if(this._operacao === "editar"){
+				this._updateSafra();
+				this.getView().byId("SafraDialog").close();
+			} 
 		},
 		
 		onCloseDialog: function(){
@@ -151,12 +151,45 @@ sap.ui.define([
 			this.byId("SafraDialog").close();
 		},
 		
+		_getDados: function(){
+			var oJSONModel = this.getOwnerComponent().getModel("model");
+			var oDados = oJSONModel.getData();
+			
+			return oDados;
+		},
+		
+		_createSafra: function(){
+			var oModel = this.getOwnerComponent().getModel();
+	
+			oModel.create("/Safras", this._getDados(), {
+				success: function() {
+					MessageBox.success("Safra inserida com sucesso!");
+					oModel.refresh(true);
+				}
+			});
+		},
+		
+		_updateSafra: function(){
+			var oModel = this.getOwnerComponent().getModel();
+			
+			oModel.update(this._sPath, this._getDados(), {
+				success: function(){
+					MessageBox.success("Safra alterada com sucesso!");
+					oModel.refresh(true);
+				}
+			});
+		},
+		
 		_checarCampos: function(oView){
 			if(oView.byId("descricao").getValue() === ""){
 				return true; 
 			}else{
 				return false; 
 			}
+		},
+		
+		getModel: function(sModel) {
+			return this.getOwnerComponent().getModel(sModel);
 		}
 	});
 });
