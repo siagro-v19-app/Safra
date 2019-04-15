@@ -45,7 +45,7 @@
 							<t:Column filterProperty="Inativa" sortProperty="Inativa">
 								<Label text="Inativa"/>
 								<t:template>
-									<Checkbox selected="{Inativa}" editable="false"/>
+									<CheckBox selected="{Inativa}" editable="false"/>
 								</t:template>
 							</t:Column>
 						</t:columns>

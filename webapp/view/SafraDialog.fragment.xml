@@ -11,7 +11,7 @@
 			<Input value="{model>/Descricao}" id="descricao" required="true"/>
 			
 			<Label text="Inativa:" labelFor="inativa"/>
-			<Checkbox selected="{model>/Inativa}" id="inativa"/>
+			<CheckBox selected="{model>/Inativa}" id="inativa"/>
 		</VBox>
    		
    		<buttons>
