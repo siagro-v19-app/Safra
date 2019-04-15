@@ -15,8 +15,8 @@
 		</VBox>
    		
    		<buttons>
-   			<Button text="Salvar" press="onSaveDialog"/>
-   			<Button text="Fechar" press="onCloseDialog"/>
+   			<Button text="Salvar" press="onSaveDialog" type="Accept"/>
+   			<Button text="Fechar" press="onCloseDialog" type="Reject"/>
    		</buttons>
    </Dialog>
 </core:FragmentDefinition>
