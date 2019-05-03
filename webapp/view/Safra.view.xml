@@ -10,12 +10,6 @@
 			<Page showHeader="false" class="sapUiContentPadding" enableScrolling="false">
 				<content>
 					<t:Table id="tableSafra"
-						rows="{
-							path: '/Safras',
-							sorter: {
-								path: 'Descricao'
-							}
-						}"
 						selectionMode="Single"
 						selectionBehavior="Row"
 						class="sapUiSizeCondensed"
@@ -26,7 +20,7 @@
 							<Toolbar>
 								<Title text="Lista de Safras"/>
 								<ToolbarSpacer/>
-								<SearchField placeholder="Pesquisar safra..." width="30%" search="filtraSafra"/>
+								<SearchField placeholder="Pesquisar descrição..." width="30%" search="filtraSafra"/>
 							</Toolbar>
 						</t:toolbar>
 						<t:columns>
